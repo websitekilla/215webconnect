@@ -1,0 +1,15 @@
+[Unit]
+Description=215 Web Connect Website
+After=network.target
+
+[Service]
+Type=simple
+User=webadmin
+WorkingDirectory=/var/www/215webconnect
+EnvironmentFile=/var/www/215webconnect/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

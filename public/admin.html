@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - Theme Customization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input[type="text"], input[type="color"], input[type="password"] {
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .preview {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+    }
+    .settings-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .error {
+      color: #e74c3c;
+      margin-top: 5px;
+    }
+    .success {
+      color: #27ae60;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  
+  <div class="settings-section">
+    <h2>Change Password</h2>
+    <form id="password-form">
+      <div class="form-group">
+        <label>Current Password: <input type="password" name="currentPassword" required /></label>
+        <label>New Password: <input type="password" name="newPassword" required /></label>
+        <label>Confirm New Password: <input type="password" name="confirmPassword" required /></label>
+      </div>
+      <button type="submit">Change Password</button>
+      <div id="password-message"></div>
+    </form>
+  </div>
+
+  <div class="settings-section">
+    <h2>Theme Customization</h2>
+    <form id="theme-form">
+      <div class="form-group">
+        <h3>Colors</h3>
+        <label>Primary Color: <input type="color" name="primary" /></label>
+        <label>Background Color: <input type="color" name="background" /></label>
+        <label>Text Color: <input type="color" name="text" /></label>
+      </div>
+
+      <div class="form-group">
+        <h3>Content</h3>
+        <label>Hero Title: <input type="text" name="heroTitle" size="50" /></label>
+        <label>Hero Subtitle: <input type="text" name="heroSubtitle" size="50" /></label>
+      </div>
+
+      <button type="submit">Save Theme Changes</button>
+      <div id="theme-message"></div>
+    </form>
+  </div>
+
+  <div class="preview">
+    <h2>Live Preview</h2>
+    <div id="preview-content"></div>
+  </div>
+
+  <script>
+    // Load current theme settings
+    fetch('/theme-settings.json')
+      .then(res => res.json())
+      .then(data => {
+        const theme = data.theme;
+        document.querySelector('input[name="primary"]').value = theme.colors.primary;
+        document.querySelector('input[name="background"]').value = theme.colors.background;
+        document.querySelector('input[name="text"]').value = theme.colors.text;
+        document.querySelector('input[name="heroTitle"]').value = theme.content.heroTitle;
+        document.querySelector('input[name="heroSubtitle"]').value = theme.content.heroSubtitle;
+      });
+
+    // Handle password change
+    document.getElementById('password-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('password-message');
+      
+      const newPassword = e.target.newPassword.value;
+      const confirmPassword = e.target.confirmPassword.value;
+      
+      if (newPassword !== confirmPassword) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = 'New passwords do not match';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            currentPassword: e.target.currentPassword.value,
+            newPassword: newPassword
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          messageDiv.className = 'success';
+          messageDiv.textContent = 'Password updated successfully';
+          e.target.reset();
+        } else {
+          messageDiv.className = 'error';
+          messageDiv.textContent = data.error || 'Failed to update password';
+        }
+      } catch (error) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = 'Error: ' + error.message;
+      }
+    };
+
+    // Handle theme changes
+    document.getElementById('theme-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('theme-message');
+      
+      const formData = {
+        theme: {
+          colors: {
+            primary: e.target.primary.value,
+            background: e.target.background.value,
+            text: e.target.text.value
+          },
+          content: {
+            heroTitle: e.target.heroTitle.value,
+            heroSubtitle: e.target.heroSubtitle.value
+          }
+        }
+      };
+
+      try {
+        const response = await fetch('/api/save-theme', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save theme');
+        }
+
+        messageDiv.className = 'success';
+        messageDiv.textContent = 'Theme updated successfully!';
+      } catch (error) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = 'Error: ' + error.message;
+      }
+    };
+  </script>
+</body>
+</html>

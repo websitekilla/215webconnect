@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>215 WEB CONNECT</title>
+</head>
+<body>
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Admin Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="login-button">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="images/logo.png" alt="215 WEB CONNECT Logo" class="logo-image">
+                <!-- Fallback text if image is not yet added -->
+                <h1 class="logo-text editable">215 WEB CONNECT</h1>
+            </div>
+            <ul>
+                <li><a href="#home" class="editable">Home</a></li>
+                <li><a href="#about" class="editable">About</a></li>
+                <li><a href="#services" class="editable">Services</a></li>
+                <li><a href="#contact" class="editable">Contact</a></li>
+                <!-- [Add more navigation items as needed] -->
+                <li id="auth-section">
+                    <button id="login-button">Admin Login</button>
+                    <button id="logout-button" style="display: none;">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <h1 class="editable">215 WEB CONNECT</h1>
+            <p class="editable">[Your Compelling Tagline]</p>
+            <a href="#contact" class="cta-button editable">[Call to Action Text]</a>
+        </section>
+
+        <section id="about" class="about">
+            <h2 class="editable">[About Section Title]</h2>
+            <div class="about-content">
+                <p class="editable">[Your company description goes here. Write a compelling story about your business, its mission, and values.]</p>
+            </div>
+        </section>
+
+        <section id="services" class="services">
+            <h2 class="editable">[Services Section Title]</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <h3 class="editable">[Service 1 Name]</h3>
+                    <p class="editable">[Service 1 description]</p>
+                </div>
+                <div class="service-card">
+                    <h3 class="editable">[Service 2 Name]</h3>
+                    <p class="editable">[Service 2 description]</p>
+                </div>
+                <div class="service-card">
+                    <h3 class="editable">[Service 3 Name]</h3>
+                    <p class="editable">[Service 3 description]</p>
+                </div>
+                <!-- [Add more service cards as needed] -->
+            </div>
+        </section>
+
+        <section id="contact" class="contact">
+            <h2 class="editable">[Contact Section Title]</h2>
+            <form id="contact-form">
+                <input type="text" placeholder="[Name]" required>
+                <input type="email" placeholder="[Email]" required>
+                <textarea placeholder="[Your Message]" required></textarea>
+                <button type="submit" class="editable">[Submit Button Text]</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p class="editable">&copy; 2025 215 WEB CONNECT. All rights reserved.</p>
+    </footer>
+    <script src="script.js"></script>
+    <script src="theme-loader.js"></script>
+</body>
+</html>

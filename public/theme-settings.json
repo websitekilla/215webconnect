@@ -1,0 +1,13 @@
+{
+    "theme": {
+        "colors": {
+            "primary": "#007bff",
+            "background": "#ffffff",
+            "text": "#333333"
+        },
+        "content": {
+            "heroTitle": "215 WEB CONNECT",
+            "heroSubtitle": "Building Digital Excellence"
+        }
+    }
+}
