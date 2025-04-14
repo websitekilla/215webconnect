@@ -1,13 +1,13 @@
 {
-    "theme": {
-        "colors": {
-            "primary": "#007bff",
-            "background": "#ffffff",
-            "text": "#333333"
-        },
-        "content": {
-            "heroTitle": "215 WEB CONNECT",
-            "heroSubtitle": "Building Digital Excellence"
-        }
+  "theme": {
+    "colors": {
+      "primary": "#3498db",
+      "background": "#ffffff",
+      "text": "#333333"
+    },
+    "content": {
+      "heroTitle": "Welcome to My Store!",
+      "heroSubtitle": "Best products just for you"
     }
+  }
 }

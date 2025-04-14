@@ -2,13 +2,16 @@ const express = require('express');
 const serverless = require('serverless-http');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const helmet = require('helmet');
-const config = require('../config');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs').promises;
 
 const app = express();
+const router = express.Router();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Security middleware
 app.use(helmet({
@@ -20,8 +23,26 @@ app.use(helmet({
     },
 }));
 
+// Session configuration
+const sessionConfig = {
+    secret: process.env.SESSION_SECRET || 'default-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60 // 1 day
+    }),
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }
+};
+
+app.use(session(sessionConfig));
+
 // MongoDB connection
-mongoose.connect(config.mongoUri, {
+mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
@@ -34,24 +55,6 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', UserSchema);
-
-// Session middleware with MongoDB store
-app.use(session({
-    secret: config.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: config.mongoUri,
-        ttl: 24 * 60 * 60 // 1 day
-    }),
-    cookie: {
-        secure: config.secure,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: 'strict',
-        domain: config.domain
-    }
-}));
 
 // Create default admin user if it doesn't exist
 const createDefaultAdmin = async () => {
@@ -74,6 +77,14 @@ const createDefaultAdmin = async () => {
 createDefaultAdmin();
 
 // Auth middleware
+const requireAuth = (req, res, next) => {
+    if (req.session && req.session.isAuthenticated) {
+        next();
+    } else {
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+};
+
 const requireAdmin = async (req, res, next) => {
     if (!req.session.user || !req.session.user.isAdmin) {
         return res.status(403).json({ error: 'Admin access required' });
@@ -81,8 +92,8 @@ const requireAdmin = async (req, res, next) => {
     next();
 };
 
-// Auth routes
-app.post('/api/login', async (req, res) => {
+// Routes
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     try {
@@ -108,7 +119,12 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.post('/api/change-password', requireAdmin, async (req, res) => {
+router.post('/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
+
+router.post('/change-password', requireAdmin, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const username = req.session.user.username;
 
@@ -130,12 +146,28 @@ app.post('/api/change-password', requireAdmin, async (req, res) => {
     }
 });
 
-app.post('/api/logout', (req, res) => {
-    req.session.destroy();
-    res.json({ success: true });
+router.post('/save-theme', requireAuth, async (req, res) => {
+    try {
+        const themeSettings = req.body;
+        await fs.writeFile(path.join(__dirname, 'theme-settings.json'), JSON.stringify(themeSettings, null, 2));
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error saving theme:', error);
+        res.status(500).json({ error: 'Failed to save theme settings' });
+    }
 });
 
-app.get('/api/user', (req, res) => {
+router.get('/theme-settings', async (req, res) => {
+    try {
+        const data = await fs.readFile(path.join(__dirname, 'theme-settings.json'), 'utf8');
+        res.json(JSON.parse(data));
+    } catch (error) {
+        console.error('Error reading theme:', error);
+        res.status(500).json({ error: 'Failed to read theme settings' });
+    }
+});
+
+router.get('/user', (req, res) => {
     if (req.session.user) {
         res.json({
             isLoggedIn: true,
@@ -149,18 +181,6 @@ app.get('/api/user', (req, res) => {
     }
 });
 
-// Theme management routes
-app.post('/api/save-theme', requireAdmin, async (req, res) => {
-    try {
-        await fs.writeFile(
-            path.join(__dirname, 'theme-settings.json'),
-            JSON.stringify(req.body, null, 2)
-        );
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error saving theme:', error);
-        res.status(500).json({ error: 'Failed to save theme' });
-    }
-});
+app.use('/.netlify/functions/api', router);
 
 module.exports.handler = serverless(app);
