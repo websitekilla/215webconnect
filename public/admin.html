@@ -51,62 +51,149 @@
       color: #27ae60;
       margin-top: 5px;
     }
+    #admin-content {
+      display: none;
+    }
+    #login-form {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
-  
-  <div class="settings-section">
-    <h2>Change Password</h2>
-    <form id="password-form">
+  <div id="login-section">
+    <form id="login-form">
+      <h2>Admin Login</h2>
       <div class="form-group">
-        <label>Current Password: <input type="password" name="currentPassword" required /></label>
-        <label>New Password: <input type="password" name="newPassword" required /></label>
-        <label>Confirm New Password: <input type="password" name="confirmPassword" required /></label>
+        <label>Username: <input type="text" name="username" required /></label>
+        <label>Password: <input type="password" name="password" required /></label>
       </div>
-      <button type="submit">Change Password</button>
-      <div id="password-message"></div>
+      <button type="submit">Login</button>
+      <div id="login-message"></div>
     </form>
   </div>
 
-  <div class="settings-section">
-    <h2>Theme Customization</h2>
-    <form id="theme-form">
-      <div class="form-group">
-        <h3>Colors</h3>
-        <label>Primary Color: <input type="color" name="primary" /></label>
-        <label>Background Color: <input type="color" name="background" /></label>
-        <label>Text Color: <input type="color" name="text" /></label>
-      </div>
+  <div id="admin-content">
+    <h1>Admin Panel</h1>
+    <button id="logout-btn" style="float: right;">Logout</button>
+    
+    <div class="settings-section">
+      <h2>Change Password</h2>
+      <form id="password-form">
+        <div class="form-group">
+          <label>Current Password: <input type="password" name="currentPassword" required /></label>
+          <label>New Password: <input type="password" name="newPassword" required /></label>
+          <label>Confirm New Password: <input type="password" name="confirmPassword" required /></label>
+        </div>
+        <button type="submit">Change Password</button>
+        <div id="password-message"></div>
+      </form>
+    </div>
 
-      <div class="form-group">
-        <h3>Content</h3>
-        <label>Hero Title: <input type="text" name="heroTitle" size="50" /></label>
-        <label>Hero Subtitle: <input type="text" name="heroSubtitle" size="50" /></label>
-      </div>
+    <div class="settings-section">
+      <h2>Theme Customization</h2>
+      <form id="theme-form">
+        <div class="form-group">
+          <h3>Colors</h3>
+          <label>Primary Color: <input type="color" name="primary" /></label>
+          <label>Background Color: <input type="color" name="background" /></label>
+          <label>Text Color: <input type="color" name="text" /></label>
+        </div>
 
-      <button type="submit">Save Theme Changes</button>
-      <div id="theme-message"></div>
-    </form>
-  </div>
+        <div class="form-group">
+          <h3>Content</h3>
+          <label>Hero Title: <input type="text" name="heroTitle" size="50" /></label>
+          <label>Hero Subtitle: <input type="text" name="heroSubtitle" size="50" /></label>
+        </div>
 
-  <div class="preview">
-    <h2>Live Preview</h2>
-    <div id="preview-content"></div>
+        <button type="submit">Save Theme Changes</button>
+        <div id="theme-message"></div>
+      </form>
+    </div>
+
+    <div class="preview">
+      <h2>Live Preview</h2>
+      <div id="preview-content"></div>
+    </div>
   </div>
 
   <script>
+    // Check authentication status
+    async function checkAuth() {
+      try {
+        const response = await fetch('/.netlify/functions/api/user');
+        const data = await response.json();
+        if (data.isLoggedIn) {
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('admin-content').style.display = 'block';
+          loadThemeSettings();
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      }
+    }
+
     // Load current theme settings
-    fetch('/theme-settings.json')
-      .then(res => res.json())
-      .then(data => {
+    async function loadThemeSettings() {
+      try {
+        const response = await fetch('/.netlify/functions/api/theme-settings');
+        const data = await response.json();
         const theme = data.theme;
         document.querySelector('input[name="primary"]').value = theme.colors.primary;
         document.querySelector('input[name="background"]').value = theme.colors.background;
         document.querySelector('input[name="text"]').value = theme.colors.text;
         document.querySelector('input[name="heroTitle"]').value = theme.content.heroTitle;
         document.querySelector('input[name="heroSubtitle"]').value = theme.content.heroSubtitle;
-      });
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+      }
+    }
+
+    // Handle login
+    document.getElementById('login-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('login-message');
+      
+      try {
+        const response = await fetch('/.netlify/functions/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: e.target.username.value,
+            password: e.target.password.value
+          })
+        });
+
+        if (response.ok) {
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('admin-content').style.display = 'block';
+          loadThemeSettings();
+        } else {
+          const data = await response.json();
+          messageDiv.className = 'error';
+          messageDiv.textContent = data.error || 'Login failed';
+        }
+      } catch (error) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = 'Error: ' + error.message;
+      }
+    };
+
+    // Handle logout
+    document.getElementById('logout-btn').onclick = async () => {
+      try {
+        await fetch('/.netlify/functions/api/logout', { method: 'POST' });
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('admin-content').style.display = 'none';
+      } catch (error) {
+        console.error('Logout failed:', error);
+      }
+    };
 
     // Handle password change
     document.getElementById('password-form').onsubmit = async (e) => {
@@ -123,7 +210,7 @@
       }
 
       try {
-        const response = await fetch('/api/change-password', {
+        const response = await fetch('/.netlify/functions/api/change-password', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -170,7 +257,7 @@
       };
 
       try {
-        const response = await fetch('/api/save-theme', {
+        const response = await fetch('/.netlify/functions/api/save-theme', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -189,6 +276,9 @@
         messageDiv.textContent = 'Error: ' + error.message;
       }
     };
+
+    // Check auth status on page load
+    checkAuth();
   </script>
 </body>
 </html>
