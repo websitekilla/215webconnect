@@ -1,7 +1,13 @@
 [build]
-  command = "npm run build"
   publish = "dist"
+  command = "npm run build"
   functions = "functions"
+
+[build.environment]
+  NODE_VERSION = "18.x"
+  NODE_ENV = "production"
+  ADMIN_USERNAME = "websitekilla"
+  ADMIN_PASSWORD = "Islam2025"
 
 [dev]
   command = "npm run dev"
@@ -11,7 +17,6 @@
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/*"
@@ -28,4 +33,4 @@
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
+    Referrer-Policy = "no-referrer-when-downgrade"
