@@ -9,10 +9,6 @@
   ADMIN_USERNAME = "websitekilla"
   ADMIN_PASSWORD = "Islam2025"
 
-[dev]
-  command = "npm run dev"
-  port = 3000
-
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
@@ -22,10 +18,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = ["theme-settings.json"]
+  force = true
 
 [[headers]]
   for = "/*"
@@ -34,3 +27,4 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer-when-downgrade"
+    Content-Security-Policy = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
