@@ -81,19 +81,6 @@
     <button id="logout-btn" style="float: right;">Logout</button>
     
     <div class="settings-section">
-      <h2>Change Password</h2>
-      <form id="password-form">
-        <div class="form-group">
-          <label>Current Password: <input type="password" name="currentPassword" required /></label>
-          <label>New Password: <input type="password" name="newPassword" required /></label>
-          <label>Confirm New Password: <input type="password" name="confirmPassword" required /></label>
-        </div>
-        <button type="submit">Change Password</button>
-        <div id="password-message"></div>
-      </form>
-    </div>
-
-    <div class="settings-section">
       <h2>Theme Customization</h2>
       <form id="theme-form">
         <div class="form-group">
@@ -121,44 +108,13 @@
   </div>
 
   <script>
-    // Check authentication status
-    async function checkAuth() {
-      try {
-        const response = await fetch('/api/user');
-        const data = await response.json();
-        if (data.isLoggedIn) {
-          document.getElementById('login-section').style.display = 'none';
-          document.getElementById('admin-content').style.display = 'block';
-          loadThemeSettings();
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      }
-    }
-
-    // Load current theme settings
-    async function loadThemeSettings() {
-      try {
-        const response = await fetch('/api/theme-settings');
-        const data = await response.json();
-        const theme = data.theme;
-        document.querySelector('input[name="primary"]').value = theme.colors.primary;
-        document.querySelector('input[name="background"]').value = theme.colors.background;
-        document.querySelector('input[name="text"]').value = theme.colors.text;
-        document.querySelector('input[name="heroTitle"]').value = theme.content.heroTitle;
-        document.querySelector('input[name="heroSubtitle"]').value = theme.content.heroSubtitle;
-      } catch (error) {
-        console.error('Failed to load theme:', error);
-      }
-    }
-
     // Handle login
     document.getElementById('login-form').onsubmit = async (e) => {
       e.preventDefault();
       const messageDiv = document.getElementById('login-message');
       
       try {
-        const response = await fetch('/api/login', {
+        const response = await fetch('/.netlify/functions/api/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -171,6 +127,7 @@
 
         const data = await response.json();
         if (response.ok) {
+          localStorage.setItem('isAuthenticated', 'true');
           document.getElementById('login-section').style.display = 'none';
           document.getElementById('admin-content').style.display = 'block';
           loadThemeSettings();
@@ -185,51 +142,27 @@
     };
 
     // Handle logout
-    document.getElementById('logout-btn').onclick = async () => {
-      try {
-        await fetch('/api/logout', { method: 'POST' });
-        document.getElementById('login-section').style.display = 'block';
-        document.getElementById('admin-content').style.display = 'none';
-      } catch (error) {
-        console.error('Logout failed:', error);
-      }
+    document.getElementById('logout-btn').onclick = () => {
+      localStorage.removeItem('isAuthenticated');
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('admin-content').style.display = 'none';
     };
 
-    // Handle password change
-    document.getElementById('password-form').onsubmit = async (e) => {
-      e.preventDefault();
-      const messageDiv = document.getElementById('password-message');
-
-      if (e.target.newPassword.value !== e.target.confirmPassword.value) {
-        messageDiv.className = 'error';
-        messageDiv.textContent = 'New passwords do not match';
-        return;
-      }
-
+    // Load current theme settings
+    async function loadThemeSettings() {
       try {
-        const response = await fetch('/api/change-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            currentPassword: e.target.currentPassword.value,
-            newPassword: e.target.newPassword.value
-          })
-        });
-
+        const response = await fetch('/.netlify/functions/api/theme-settings');
         const data = await response.json();
-        messageDiv.className = response.ok ? 'success' : 'error';
-        messageDiv.textContent = data.message || data.error;
-        
-        if (response.ok) {
-          e.target.reset();
-        }
+        const theme = data.theme;
+        document.querySelector('input[name="primary"]').value = theme.colors.primary;
+        document.querySelector('input[name="background"]').value = theme.colors.background;
+        document.querySelector('input[name="text"]').value = theme.colors.text;
+        document.querySelector('input[name="heroTitle"]').value = theme.content.heroTitle;
+        document.querySelector('input[name="heroSubtitle"]').value = theme.content.heroSubtitle;
       } catch (error) {
-        messageDiv.className = 'error';
-        messageDiv.textContent = 'Error: ' + error.message;
+        console.error('Failed to load theme:', error);
       }
-    };
+    }
 
     // Handle theme changes
     document.getElementById('theme-form').onsubmit = async (e) => {
@@ -251,7 +184,7 @@
           }
         };
 
-        const response = await fetch('/api/save-theme', {
+        const response = await fetch('/.netlify/functions/api/save-theme', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -269,7 +202,11 @@
     };
 
     // Check auth status on page load
-    checkAuth();
+    if (localStorage.getItem('isAuthenticated') === 'true') {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('admin-content').style.display = 'block';
+      loadThemeSettings();
+    }
   </script>
 </body>
 </html>
